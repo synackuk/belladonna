@@ -40,7 +40,6 @@ static void default_error_cb(char* msg) {
 }
 
 static void default_prog_cb(unsigned int progress) {
-	int i = 0;
 
 	if(progress < 0) {
 		return;
@@ -52,7 +51,7 @@ static void default_prog_cb(unsigned int progress) {
 
 	printf("\r[");
 
-	for(i = 0; i < 50; i++) {
+	for(unsigned int i = 0; i < 50; i++) {
 		if(i < progress / 2) {
 			printf("=");
 		} else {
@@ -78,7 +77,7 @@ static char* get_application_directory() {
 	wordexp_t exp_result;
 	wordexp(path, &exp_result, 0);
 	bzero(path, PATH_MAX);
-	for(int i = 0; i < exp_result.we_wordc; i += 1) {
+	for(size_t i = 0; i < exp_result.we_wordc; i += 1) {
 		strncat(path, exp_result.we_wordv[i], PATH_MAX);
 		if(i + 1 != exp_result.we_wordc) {
 			strncat(path, " ", PATH_MAX);
@@ -323,8 +322,8 @@ static int boot_ibss_checkm8(char* ibss, size_t ibss_len) {
 	size_t len = 0;
 	while(len != ibss_len) {
 		size_t size = ((ibss_len - len) > 0x800) ? 0x800 : (ibss_len - len);
-		ret = irecv_usb_control_transfer(dev, 0x21, 1, 0, 0, (unsigned char*)&ibss[len], size, 0);
-		if(ret != size) {
+		size_t sent = irecv_usb_control_transfer(dev, 0x21, 1, 0, 0, (unsigned char*)&ibss[len], size, 0);
+		if(sent != size) {
 			BELLADONNA_ERROR("Failed to upload iBSS.");
 			return -1;
 		}
@@ -510,8 +509,7 @@ int belladonna_enter_recovery() {
 	return 0;
 }
 
-int belladonna_boot_tethered(char* boot_args) {
-	int ret;
+int belladonna_boot_tethered() {
 	irecv_send_command(dev, "atropine load ibot");
 	irecv_send_command(dev, "go");
 	return 0;

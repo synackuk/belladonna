@@ -1,6 +1,6 @@
 CC = gcc
 RM = rm
-CFLAGS = -I../
+CFLAGS = -W -Wall -pedantic -O2 -I../
 LDFLAGS = -L/usr/lib -L/usr/local/lib -L../ -L/usr/local/opt/openssl/lib
 LIBRARIES = -lfragmentzip -lbelladonna -lz -lzip -lirecovery -limobiledevice -lplist -lcrypto -lcurl
 OBJECTS = belladonna.o

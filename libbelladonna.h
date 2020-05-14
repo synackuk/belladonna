@@ -22,7 +22,7 @@ void belladonna_set_prog_cb(belladonna_prog_cb new_cb);
 void belladonna_init();
 int belladonna_get_device();
 int belladonna_exploit();
-int belladonna_boot_tethered(char* boot_args);
+int belladonna_boot_tethered();
 int belladonna_boot_ramdisk();
 int belladonna_restore_ipsw(char* path);
 void belladonna_exit();

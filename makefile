@@ -1,7 +1,7 @@
 CC = gcc
 AR = ar
 RM = rm
-CFLAGS = -I/usr/local/include -I/opt/local/include -I. -I./ipsw -I./libloader -mmacosx-version-min=10.12
+CFLAGS = -W -Wall -pedantic -Wno-zero-length-array -O2 -I/usr/local/include -I/opt/local/include -I. -I./ipsw -I./libloader -mmacosx-version-min=10.12
 OBJECTS = libbelladonna.o
 
 .PHONY: exploits idevicerestore
