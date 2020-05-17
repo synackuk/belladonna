@@ -1,8 +1,20 @@
 #include <libbelladonna.h>
 #include <stdio.h>
 #include <string.h>
-#include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
+
+const struct option longopts[] = {
+	{"pwned-dfu", no_argument, NULL, 'p'},
+	{"pwned-rec", no_argument, NULL, 'r'},
+	{"tether", no_argument, NULL, 'b'},
+	{"jailbreak", no_argument, NULL, 'j'},
+	{"restore", required_argument, NULL, 'w'},
+	{"hooker", required_argument, NULL, 'h'},
+	{"atropine", required_argument, NULL, 'a'},
+	{NULL, 0, NULL, 0}
+};
 
 void usage(char** argv) {
 	printf("Usage: %s [options]\n", argv[0]);
@@ -11,10 +23,15 @@ void usage(char** argv) {
 	printf("\t-b\t\tBoot device tethered\n");
 	printf("\t-j\t\tBoot jailbreak ramdisk\n");
 	printf("\t-w <path>\tRestore Patched IPSW at path\n");
+	printf("\t-h <path>\tUse atropine hooker at path instead of latest downloadable\n");
+	printf("\t-a <path>\tUse atropine payload at path instead of latest downloadable\n");
+	belladonna_exit();
+	exit(0);
 }
 
 int main(int argc, char** argv) {
 	int ret;
+	int optindex = 0;
 	int pwned_dfu = 0;
 	int pwned_recovery = 0;
 	int tethered_boot = 0;
@@ -22,45 +39,56 @@ int main(int argc, char** argv) {
 	char* restore_path = NULL;
 	char boot_args[255];
 	bzero(boot_args, 255);
-
-	if(argc == 1) {
-		usage(argv);
-		return -1;
-	}
-	if(!strcmp(argv[1], "-p")) {
-		pwned_dfu = 1;
-	}
-	else if(!strcmp(argv[1], "-r")) {
-		pwned_dfu = 1;
-		pwned_recovery = 1;
-	}
-	else if(!strcmp(argv[1], "-b")) {
-		pwned_dfu = 1;
-		pwned_recovery = 1;
-		tethered_boot = 1;
-		if(argc > 2) {
-			strncpy(boot_args, argv[2], 255);
-		}
-	}
-	else if(!strcmp(argv[1], "-j")) {
-		pwned_dfu = 1;
-		pwned_recovery = 1;
-		ramdisk_boot = 1;
-	}
-	else if(!strcmp(argv[1], "-w")) {
-		if(argc < 3) {
-			usage(argv);
-			return -1;
-		}
-		pwned_dfu = 1;
-		pwned_recovery = 1;
-		restore_path = argv[2];
-	}
-	else {
-		usage(argv);
-		return -1;
-	}
 	belladonna_init();
+	int opt;
+	if(argc < 2) {
+		usage(argv);
+	} 
+	while ((opt = getopt_long(argc, argv, "prbjw:h:a:", longopts, &optindex)) > 0) {
+		switch (opt) {
+			case 'p':
+				pwned_dfu = 1;
+				break;
+			break;
+			case 'r':
+				pwned_dfu = 1;
+				pwned_recovery = 1;
+				break;
+			break;
+			case 'b':
+				pwned_dfu = 1;
+				pwned_recovery = 1;
+				tethered_boot = 1;
+				break;
+			break;
+			case 'j':
+				pwned_dfu = 1;
+				pwned_recovery = 1;
+				ramdisk_boot = 1;
+				usage(argv);
+			break;
+			case 'w':
+				if(!optarg) {
+					usage(argv);
+				}
+				pwned_dfu = 1;
+				pwned_recovery = 1;
+				restore_path = optarg;
+				break;
+			case 'h':
+				if(!optarg) {
+					usage(argv);
+				}
+				belladonna_set_hooker(optarg);
+			break;
+			case 'a':
+				if(!optarg) {
+					usage(argv);
+				}
+				belladonna_set_atropine(optarg);
+			break;
+		}
+	}
 	while(belladonna_get_device() != 0) {
 		printf("Waiting for device in DFU mode\n");
 		sleep(1);
@@ -88,7 +116,7 @@ int main(int argc, char** argv) {
 			printf("Failed to boot tethered\n");
 			return -1;
 		}
-	}/*
+	}
 	if(ramdisk_boot){
 		ret = belladonna_boot_ramdisk();
 		if (ret != 0) {
@@ -96,7 +124,7 @@ int main(int argc, char** argv) {
 			printf("Failed to boot ramdisk\n");
 			return -1;
 		}
-	}*/
+	}
 	if(restore_path) {
 		ret = belladonna_restore_ipsw(restore_path);
 		if (ret != 0) {
