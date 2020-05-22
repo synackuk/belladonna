@@ -25,6 +25,7 @@ void usage(char** argv) {
 	printf("\t-w <path>\tRestore Patched IPSW at path\n");
 	printf("\t-h <path>\tUse atropine hooker at path instead of latest downloadable\n");
 	printf("\t-a <path>\tUse atropine payload at path instead of latest downloadable\n");
+	printf("\t-d <path>\tUpload custom ramdisk to device instead of latest availible hyoscine\n");
 	belladonna_exit();
 	exit(0);
 }
@@ -37,14 +38,12 @@ int main(int argc, char** argv) {
 	int tethered_boot = 0;
 	int ramdisk_boot = 0;
 	char* restore_path = NULL;
-	char boot_args[255];
-	bzero(boot_args, 255);
 	belladonna_init();
 	int opt;
 	if(argc < 2) {
 		usage(argv);
 	} 
-	while ((opt = getopt_long(argc, argv, "prbjw:h:a:", longopts, &optindex)) > 0) {
+	while ((opt = getopt_long(argc, argv, "prbjw:h:a:d:", longopts, &optindex)) > 0) {
 		switch (opt) {
 			case 'p':
 				pwned_dfu = 1;
@@ -65,8 +64,7 @@ int main(int argc, char** argv) {
 				pwned_dfu = 1;
 				pwned_recovery = 1;
 				ramdisk_boot = 1;
-				usage(argv);
-			break;
+				break;
 			case 'w':
 				if(!optarg) {
 					usage(argv);
@@ -80,13 +78,22 @@ int main(int argc, char** argv) {
 					usage(argv);
 				}
 				belladonna_set_hooker(optarg);
-			break;
+				break;
 			case 'a':
 				if(!optarg) {
 					usage(argv);
 				}
 				belladonna_set_atropine(optarg);
-			break;
+				break;
+			case 'd':
+				if(!optarg) {
+					usage(argv);
+				}
+				belladonna_set_ramdisk(optarg);
+				break;
+			default:
+				usage(argv);
+				break;
 		}
 	}
 	while(belladonna_get_device() != 0) {
@@ -110,7 +117,7 @@ int main(int argc, char** argv) {
 		}
 	}
 	if(tethered_boot){
-		ret = belladonna_boot_tethered(boot_args);
+		ret = belladonna_boot_tethered();
 		if (ret != 0) {
 			belladonna_exit();
 			printf("Failed to boot tethered\n");

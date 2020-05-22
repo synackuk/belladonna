@@ -5,9 +5,9 @@ test -z "$srcdir" && srcdir=.
 
 (
 	cd "$srcdir"
-    aclocal -I m4
-    autoheader
-    automake --add-missing
-    autoconf
+	aclocal -I m4
+	autoheader
+	automake --add-missing
+	autoconf
 )
 "$srcdir/configure" "$@"

@@ -12,8 +12,6 @@
 #include <idevicerestore/idevicerestore.h>
 #include <exploits/exploits.h>
 
-#include <payloads/hyoscine.h>
-
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -32,12 +30,16 @@
 #endif
 
 #define ATROPINE_DOWNLOAD_URL "https://github.com/synackuk/atropine/releases/latest/download/"
+#define HYOSCINE_DOWNLOAD_URL "https://github.com/synackuk/hyoscine/releases/latest/download/"
 
 static char* hooker = NULL;
 static size_t hooker_length = 0;
 
 static char* atropine = NULL;
 static size_t atropine_length = 0;
+
+static char* ramdisk = NULL;
+static size_t ramdisk_length = 0;
 
 static irecv_client_t dev = NULL;
 static belladonna_log_cb belladonna_log_handler = NULL;
@@ -152,6 +154,11 @@ int belladonna_set_atropine(char* path) {
 	return read_file_into_buffer(path, &atropine, &atropine_length);
 }
 
+int belladonna_set_ramdisk(char* path) {
+	return read_file_into_buffer(path, &ramdisk, &ramdisk_length);
+}
+
+
 void belladonna_set_log_cb(belladonna_log_cb new_cb) {
 	belladonna_log_handler = new_cb;
 }
@@ -167,6 +174,7 @@ void belladonna_set_prog_cb(belladonna_prog_cb new_cb) {
 void belladonna_init() {
 #ifdef __APPLE__
 	system("killall -9 iTunesHelper 2> /dev/null");
+	system("killall -9 iTunes 2> /dev/null");
 	system("kill -STOP $(pgrep AMPDeviceDiscoveryAgent) 2> /dev/null"); // TY Siguza
 #endif
 	belladonna_set_log_cb(&default_log_cb);
@@ -677,8 +685,16 @@ int belladonna_boot_tethered() {
 
 static int load_ramdisk() {
 	int ret;
+	if(!ramdisk) {
+		belladonna_log("Downloading hyoscine\n");
+		ret = download_to_memory(HYOSCINE_DOWNLOAD_URL "hyoscine.img3", &ramdisk, &ramdisk_length);
+		if(ret != 0) {
+			BELLADONNA_ERROR("Failed to download iBoot payload.");
+			return -1;
+		}
+	}
 	belladonna_log("Uploading ramdisk\n");
-	ret = irecv_send_buffer(dev, (unsigned char*)hyoscine, hyoscine_length, 0);
+	ret = irecv_send_buffer(dev, (unsigned char*)ramdisk, ramdisk_length, 0);
 	if(ret != 0) {
 		BELLADONNA_ERROR("Failed to upload ramdisk.");
 		return -1;
