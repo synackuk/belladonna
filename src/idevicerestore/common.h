@@ -83,12 +83,9 @@ extern struct idevicerestore_mode_t idevicerestore_modes[];
 
 extern int idevicerestore_debug;
 
-__attribute__((format(printf, 1, 2)))
-void info(const char* format, ...);
-__attribute__((format(printf, 1, 2)))
-void error(const char* format, ...);
-__attribute__((format(printf, 1, 2)))
-void debug(const char* format, ...);
+extern debug_cb_t debug;
+extern error_cb_t error;
+extern info_cb_t info;
 
 void debug_plist(plist_t plist);
 void print_progress_bar(double progress);

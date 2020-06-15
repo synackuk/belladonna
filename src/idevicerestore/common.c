@@ -78,16 +78,15 @@ static int info_disabled = 0;
 static int error_disabled = 0;
 static int debug_disabled = 0;
 
-void info(const char* format, ...)
+static void default_info_cb(char* format, ...)
 {
-	if (info_disabled) return;
 	va_list vargs;
 	va_start(vargs, format);
 	vfprintf((info_stream) ? info_stream : stdout, format, vargs);
 	va_end(vargs);
 }
 
-void error(const char* format, ...)
+static void default_error_cb(char* format, ...)
 {
 	va_list vargs, vargs2;
 	va_start(vargs, format);
@@ -100,7 +99,7 @@ void error(const char* format, ...)
 	va_end(vargs2);
 }
 
-void debug(const char* format, ...)
+static void default_debug_cb(char* format, ...)
 {
 	if (debug_disabled) return;
 	if (!idevicerestore_debug) {
@@ -111,6 +110,11 @@ void debug(const char* format, ...)
 	vfprintf((debug_stream) ? debug_stream : stderr, format, vargs);
 	va_end(vargs);
 }
+
+
+debug_cb_t debug = default_debug_cb;
+error_cb_t error = default_error_cb;
+info_cb_t info = default_info_cb;
 
 void idevicerestore_set_info_stream(FILE* strm)
 {

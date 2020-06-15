@@ -163,12 +163,26 @@ void belladonna_set_log_cb(belladonna_log_cb new_cb) {
 	belladonna_log_handler = new_cb;
 }
 
-void belladonna_set_err_cb(belladonna_error_cb new_cb) {
+void belladonna_set_error_cb(belladonna_error_cb new_cb) {
 	belladonna_error_handler = new_cb;
 }
 
 void belladonna_set_prog_cb(belladonna_prog_cb new_cb) {
 	belladonna_prog_handler = new_cb;
+}
+
+static void idevicerestore_error_wrapper(char* msg, ...) {
+	va_list args;
+	va_start(args, msg);
+	char* log;
+	vasprintf(&log, msg, args);
+	va_end(args);
+	if(!log) { // We're in real trouble...
+		belladonna_log_handler("Failed to log message (out of memory).");
+		return;
+	}
+	belladonna_log_handler(log);
+	free(log);
 }
 
 void belladonna_init() {
@@ -177,10 +191,13 @@ void belladonna_init() {
 	system("killall -9 iTunes 2> /dev/null");
 	system("kill -STOP $(pgrep AMPDeviceDiscoveryAgent) 2> /dev/null"); // TY Siguza
 #endif
-	belladonna_set_log_cb(&default_log_cb);
-	belladonna_set_err_cb(&default_error_cb);
-	belladonna_set_prog_cb(&default_prog_cb);
+	belladonna_set_log_cb(default_log_cb);
+	belladonna_set_error_cb(default_error_cb);
+	belladonna_set_prog_cb(default_prog_cb);
 	exploits_init();
+
+	idevicerestore_set_error_cb(idevicerestore_error_wrapper);
+	idevicerestore_set_info_cb(belladonna_log);
 }
 
 void belladonna_exit() {
@@ -189,7 +206,7 @@ void belladonna_exit() {
 		dev = NULL;
 	}
 	belladonna_set_log_cb(NULL);
-	belladonna_set_err_cb(NULL);
+	belladonna_set_error_cb(NULL);
 	belladonna_set_prog_cb(NULL);
 	exploits_exit();
 }
@@ -221,6 +238,10 @@ void belladonna_error(int line, char* file, char* error) {
 
 void belladonna_prog(unsigned int progress) {
 	belladonna_prog_handler(progress);
+}
+
+static void idevicerestore_prog_wrapper(int step, double step_progress, void* userdata) {
+	belladonna_prog((unsigned int)(step_progress * 100.0));
 }
 
 int belladonna_get_device() {
@@ -882,12 +903,12 @@ int belladonna_boot_ramdisk() {
 	}
 	ret = boot_ibec();
 	if(ret != 0) {
-		BELLADONNA_ERROR("Failed to reload iBEC.");
+		BELLADONNA_ERROR("Failed to boot iBEC.");
 		return -1;
 	}
 	dev = irecv_reconnect(dev, 2);
 	if(!dev) {
-		BELLADONNA_ERROR("Failed to reload iBEC.");
+		BELLADONNA_ERROR("Failed to boot iBEC.");
 		return -1;
 	}
 	ret = execute_device_tree();
@@ -941,6 +962,7 @@ int belladonna_restore_ipsw(char* path) {
 	client->flags |= FLAG_LATEST_SHSH;
 	client->flags &= ~FLAG_INTERACTIVE;
 	client->ipsw = strdup(path);
+	idevicerestore_set_progress_callback(client, idevicerestore_prog_wrapper, NULL);
 	ret = idevicerestore_start(client);
 	if(ret != 0) {
 		BELLADONNA_ERROR("Failed to restore device.");

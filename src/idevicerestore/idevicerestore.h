@@ -62,6 +62,9 @@ enum {
 	RESTORE_NUM_STEPS
 };
 
+typedef void(*debug_cb_t)(char* format, ...);
+typedef void(*error_cb_t)(char* format, ...);
+typedef void(*info_cb_t)(char* format, ...);
 typedef void (*idevicerestore_progress_cb_t)(int step, double step_progress, void* userdata);
 
 struct idevicerestore_client_t {
@@ -110,6 +113,9 @@ void idevicerestore_set_udid(struct idevicerestore_client_t* client, const char*
 void idevicerestore_set_flags(struct idevicerestore_client_t* client, int flags);
 void idevicerestore_set_ipsw(struct idevicerestore_client_t* client, const char* path);
 void idevicerestore_set_cache_path(struct idevicerestore_client_t* client, const char* path);
+void idevicerestore_set_debug_cb(debug_cb_t new_cb);
+void idevicerestore_set_error_cb(error_cb_t new_cb);
+void idevicerestore_set_info_cb(info_cb_t new_cb);
 void idevicerestore_set_progress_callback(struct idevicerestore_client_t* client, idevicerestore_progress_cb_t cbfunc, void* userdata);
 void idevicerestore_set_info_stream(FILE* strm);
 void idevicerestore_set_error_stream(FILE* strm);
