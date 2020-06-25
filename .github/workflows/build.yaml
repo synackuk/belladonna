@@ -1,0 +1,90 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - uses: fiam/arm-none-eabi-gcc@v1
+      with:
+        release: '9-2019-q4'
+        
+    - name: Build and package
+      run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            brew tap stek29/homebrew-idevice
+            brew install libzip openssl libplist autoconf automake libtool autoconf-archive pkg-config
+          export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opt/openssl@1.1/lib/pkgconfig
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt update
+            sudo apt install -y libcurl4-openssl-dev libplist-dev libzip-dev openssl libssl-dev libusb-1.0-0-dev libreadline-dev build-essential git make automake libtool autoconf-archive pkg-config
+          fi
+          git clone https://github.com/synackuk/libirecovery
+          git clone https://github.com/libimobiledevice/usbmuxd
+          git clone https://github.com/libimobiledevice/libimobiledevice
+          git clone https://github.com/libimobiledevice/libusbmuxd
+          git clone https://github.com/libimobiledevice/libplist
+          git clone https://github.com/tihmstar/libgeneral
+          git clone https://github.com/tihmstar/libfragmentzip
+          cd libplist && ./autogen.sh --without-cython && sudo make install && cd ..
+          cd libusbmuxd && ./autogen.sh && sudo make install && cd ..
+          cd libimobiledevice && ./autogen.sh --without-cython && sudo make install && cd ..
+          cd usbmuxd && ./autogen.sh && sudo make install && cd ..
+          cd libirecovery && ./autogen.sh && sudo make install && cd ..
+          cd libgeneral && ./autogen.sh && sudo make install && cd ..
+          cd libfragmentzip && ./autogen.sh && sudo make install && cd ..
+          git clone https://github.com/gwilymk/bin2c && cd bin2c && make && sudo cp bin2c /usr/local/bin && cd ..
+          ./autogen.sh
+          make
+          mkdir release
+          cp src/libbelladonna.a release
+          cp tools/belladonna release
+          zip -r $RUNNER_OS.zip release
+          echo "::set-env name=name::$(echo "$RUNNER_OS.zip")"
+      shell: bash
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ${{ env.name }}
+        path: ${{ env.name }}
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Download linux
+      uses: actions/download-artifact@v1
+      with:
+        name: Linux.zip   
+        path: Linux.zip    
+    - name: Download macos artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: macOS.zip
+        path: macOS.zip
+    - name: set build version
+      run: |
+          echo "::set-env name=BUILD_VERSION::$(echo "$(git log -1 --pretty=format:'%H' | cut -c1-8  | tr -d '\n')")"
+          echo "::set-env name=COMMIT_MSG::$(echo "$(git log -1 --pretty=%B)")"
+    - name: Release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: ${{ env.BUILD_VERSION }}
+        prerelease: false
+        title: ${{ env.COMMIT_MSG }}
+        files: |
+          Linux.zip
+          macOS.zip

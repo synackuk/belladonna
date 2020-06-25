@@ -32,7 +32,7 @@ PKG_CHECK_MODULES(zlib, zlib >= 1.2)
 PKG_CHECK_MODULES(libzip, libzip)
 PKG_CHECK_MODULES(libirecovery, libirecovery >= 0.2.0)
 PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.1)
-PKG_CHECK_MODULES(libplist, libplist >= 1.12)
+PKG_CHECK_MODULES(libplist, libplist-2.0)
 PKG_CHECK_MODULES(openssl, openssl >= 0.9.8)
 PKG_CHECK_MODULES(libcurl, libcurl >= 7.0)
 
