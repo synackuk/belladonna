@@ -43,24 +43,28 @@ AC_MSG_CHECKING([whether we need platform-specific build settings])
 case ${host_os} in
   *mingw32*|*cygwin*)
     AC_MSG_RESULT([yes])
-    win32=true
+    build_win32=yes
     GLOBAL_CFLAGS+="-DWIN32 -D__LITTLE_ENDIAN__=1"
     ;;
   darwin*)
     AC_MSG_RESULT([yes])
     AC_DEFINE([_DARWIN_BETTER_REALPATH], [1], [Use better method for realpath])
     AX_PTHREAD([], [AC_MSG_ERROR([pthread is required to build $PACKAGE])])
+    build_darwin=yes
     ;;
   *)
     AC_MSG_RESULT([yes])
     AX_PTHREAD([], [AC_MSG_ERROR([pthread is required to build $PACKAGE])])
+    build_linux=yes
     ;;
 esac
 
 AC_CHECK_FUNCS([strsep strcspn mkstemp realpath])
 
 
-AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
+AM_CONDITIONAL([LINUX], [test "$build_linux" = "yes"])
+AM_CONDITIONAL([WIN32], [test "$build_win32" = "yes"])
+AM_CONDITIONAL([DARWIN], [test "$build_darwin" = "yes"])
 
 AC_SYS_LARGEFILE
 

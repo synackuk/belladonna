@@ -148,7 +148,7 @@ int ipsw_get_file_size(const char* ipsw, const char* infile, uint64_t* size)
 	return 0;
 }
 
-int ipsw_extract_to_file_with_progress(const char* ipsw, const char* infile, const char* outfile, int print_progress)
+int ipsw_extract_to_file_with_progress(struct idevicerestore_client_t* client, const char* ipsw, const char* infile, const char* outfile, int print_progress)
 {
 	int ret = 0;
 	ipsw_archive* archive = ipsw_open(ipsw);
@@ -216,7 +216,12 @@ int ipsw_extract_to_file_with_progress(const char* ipsw, const char* infile, con
 			bytes += size;
 			if (print_progress) {
 				progress = ((double)bytes / (double)zstat.size) * 100.0;
-				print_progress_bar(progress);
+				if(client->progress_cb) {
+					client->progress_cb(0, progress, client->progress_cb_data);
+				}
+				else {
+					print_progress_bar(progress);
+				}
 			}
 		}
 		free(buffer);
@@ -309,7 +314,7 @@ int ipsw_extract_to_file_with_progress(const char* ipsw, const char* infile, con
 
 int ipsw_extract_to_file(const char* ipsw, const char* infile, const char* outfile)
 {
-	return ipsw_extract_to_file_with_progress(ipsw, infile, outfile, 0);
+	return ipsw_extract_to_file_with_progress(NULL, ipsw, infile, outfile, 0);
 }
 
 int ipsw_file_exists(const char* ipsw, const char* infile)
