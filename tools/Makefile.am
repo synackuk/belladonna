@@ -6,6 +6,6 @@ AM_CFLAGS += -mmacosx-version-min=10.10
 endif 
 
 noinst_PROGRAMS = belladonna
-belladonna_CFLAGS = -I../src $(AM_CFLAGS) -mmacosx-version-min=10.10
+belladonna_CFLAGS = -I../src $(AM_CFLAGS)
 belladonna_LDADD = ../src/libbelladonna.a $(AM_LDFLAGS)
 belladonna_SOURCES = belladonna.c
